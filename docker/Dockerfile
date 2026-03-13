@@ -73,11 +73,16 @@ RUN mkdir -p /workspace /home/${USERNAME}/.cache /home/${USERNAME}/.config /home
 FROM os-base AS claude-runtime
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG USERNAME=claude
 ARG INSTALL_NODE=1
 ARG INSTALL_CLAUDE=1
 ARG NODE_MAJOR=22
 ARG CLAUDE_NPM_PACKAGE=@anthropic-ai/claude-code
 ARG CLAUDE_NPM_VERSION=
+ARG CLAUDE_NATIVE_VERSION=latest
+
+ENV PATH="/home/${USERNAME}/.local/bin:${PATH}"
+ENV DISABLE_AUTOUPDATER=1
 
 # Claude-specific layer: Node.js + Claude Code
 RUN set -eux; \
@@ -88,15 +93,11 @@ RUN set -eux; \
       rm -rf /var/lib/apt/lists/*; \
     fi; \
     if [ "${INSTALL_CLAUDE}" = "1" ]; then \
-      if [ "${INSTALL_NODE}" != "1" ]; then \
-        echo "INSTALL_CLAUDE=1 requires INSTALL_NODE=1"; \
-        exit 1; \
-      fi; \
-      pkg="${CLAUDE_NPM_PACKAGE}"; \
+      install_version="${CLAUDE_NATIVE_VERSION}"; \
       if [ -n "${CLAUDE_NPM_VERSION}" ]; then \
-        pkg="${pkg}@${CLAUDE_NPM_VERSION}"; \
+        install_version="${CLAUDE_NPM_VERSION}"; \
       fi; \
-      npm install -g "${pkg}"; \
+      su "${USERNAME}" -s /bin/sh -c "curl -fsSL https://claude.ai/install.sh | bash -s -- ${install_version}"; \
     fi
 
 WORKDIR /workspace

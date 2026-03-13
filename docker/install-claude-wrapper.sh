@@ -46,6 +46,7 @@ DOCKER_CONTEXT="${DOCKER_CONTEXT}"
 DOCKERFILE_PATH="${DOCKERFILE_PATH}"
 WORKSPACE_ROOT="/workspace"
 HOST_CLAUDE_DIR="\${HOME}/.claude"
+HOST_CLAUDE_FILE="\${HOME}/.claude.json"
 HOST_CACHE_DIR="\${HOME}/.cache/claude-docker"
 HOST_CONFIG_DIR="\${HOME}/.config/claude-docker"
 
@@ -72,12 +73,21 @@ main() {
     -e "AWS_REGION=\${AWS_REGION:-}"
     -e "AWS_DEFAULT_REGION=\${AWS_DEFAULT_REGION:-}"
     -e "BEDROCK_MODEL_ID=\${BEDROCK_MODEL_ID:-}"
+    -e "TERM=\${TERM:-xterm-256color}"
+    -e "COLORTERM=\${COLORTERM:-truecolor}"
+    -e "CLICOLOR=\${CLICOLOR:-1}"
+    -e "CLICOLOR_FORCE=\${CLICOLOR_FORCE:-1}"
+    -e "FORCE_COLOR=\${FORCE_COLOR:-1}"
   )
 
   mkdir -p "\${HOST_CLAUDE_DIR}" "\${HOST_CACHE_DIR}" "\${HOST_CONFIG_DIR}"
 
   if [[ -t 0 && -t 1 ]]; then
     docker_args+=(-t)
+  fi
+
+  if [[ -f "\${HOST_CLAUDE_FILE}" ]]; then
+    docker_args+=(-v "\${HOST_CLAUDE_FILE}:/home/claude/.claude.json")
   fi
 
   if [[ -d "\${HOME}/.aws" ]]; then
