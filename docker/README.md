@@ -1,11 +1,11 @@
 # Claude Docker
 
-Dockerized Claude Code with a non-root runtime user and a host-side wrapper installer.
+Dockerized Claude Code with a non-root runtime user and an interactive host-side wrapper installer.
 
 ## Files
 
 - `Dockerfile`: builds the Claude image
-- `install-claude-wrapper.sh`: installs a `claude` wrapper into `/usr/local/bin/claude`
+- `install-claude-wrapper.sh`: interactive installer for `/usr/local/bin/claude`
 - `.env.example`: example environment values
 
 ## Image behavior
@@ -41,11 +41,24 @@ docker run --rm -it \
 
 ## Install local `claude`
 
-The installer writes a self-contained wrapper to `/usr/local/bin/claude`.
+The installer is interactive and writes a self-contained wrapper to
+`/usr/local/bin/claude`.
 
 ```bash
 sudo /Users/alexander.vivas.ext/git/alexandervivas/my-configs/docker/install-claude-wrapper.sh
 ```
+
+The installer asks for a few grouped defaults such as:
+
+- auth mode: `anthropic` or `bedrock`
+- image extras in one prompt: `java`
+- host mounts in one prompt: `aws`, `ssh`, `gitconfig`, `m2`
+- if auth mode is `bedrock`, AWS CLI and AWS mounting defaults are implied automatically
+- follow-up specifics only when needed, for example Java version if `java` is selected
+- default Claude version
+
+Those answers are baked into the generated wrapper as defaults, but you can
+still override them later with environment variables.
 
 After that, calling `claude` on the host will:
 
@@ -75,11 +88,13 @@ Supported variables:
 
 - `INSTALL_PATH`: target path for the generated wrapper
 - `IMAGE_NAME`: Docker image tag used by the generated wrapper
+- `INTERACTIVE=0`: skip prompts and use env/default values
 
 ## Runtime parameterization
 
-The generated wrapper is driven by environment variables so you can keep one
-installed `claude` command and vary the image features per project.
+The generated wrapper stores installer-selected defaults, and is also driven by
+environment variables so you can keep one installed `claude` command and vary
+the image features per project.
 
 Build-related variables:
 
@@ -98,6 +113,10 @@ Build-related variables:
 Runtime/auth variables:
 
 - `CLAUDE_DOCKER_AUTH_MODE`: `anthropic` or `bedrock`, default `anthropic`
+- `CLAUDE_DOCKER_MOUNT_AWS`: `auto`, `on`, or `off`
+- `CLAUDE_DOCKER_MOUNT_SSH`: `1` or `0`
+- `CLAUDE_DOCKER_MOUNT_GITCONFIG`: `1` or `0`
+- `CLAUDE_DOCKER_MOUNT_M2`: `1` or `0`
 - `AWS_PROFILE`, `AWS_REGION`, `AWS_DEFAULT_REGION`, `BEDROCK_MODEL_ID`
 - `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`
 
