@@ -41,7 +41,7 @@ cat >"${INSTALL_PATH}" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE_NAME="${IMAGE_NAME}"
+IMAGE_REPO="${IMAGE_NAME}"
 DOCKER_CONTEXT="${DOCKER_CONTEXT}"
 DOCKERFILE_PATH="${DOCKERFILE_PATH}"
 WORKSPACE_ROOT="/workspace"
@@ -49,14 +49,53 @@ HOST_CLAUDE_DIR="\${HOME}/.claude"
 HOST_CLAUDE_FILE="\${HOME}/.claude.json"
 HOST_CACHE_DIR="\${HOME}/.cache/claude-docker"
 HOST_CONFIG_DIR="\${HOME}/.config/claude-docker"
+HOST_M2_DIR="\${HOME}/.m2"
+
+sanitize_tag_value() {
+  printf '%s' "\$1" | tr '/: ' '-' | tr -cd '[:alnum:]._-'
+}
+
+build_image_name() {
+  local image_repo="\${CLAUDE_DOCKER_IMAGE_REPO:-\${IMAGE_REPO}}"
+  local install_awscli="\${CLAUDE_DOCKER_INSTALL_AWSCLI:-1}"
+  local install_node="\${CLAUDE_DOCKER_INSTALL_NODE:-1}"
+  local install_claude="\${CLAUDE_DOCKER_INSTALL_CLAUDE:-1}"
+  local node_major="\${CLAUDE_DOCKER_NODE_MAJOR:-22}"
+  local install_java="\${CLAUDE_DOCKER_INSTALL_JAVA:-0}"
+  local java_version="\${CLAUDE_DOCKER_JAVA_VERSION:-21}"
+  local install_maven="\${CLAUDE_DOCKER_INSTALL_MAVEN:-0}"
+  local claude_version="\${CLAUDE_DOCKER_CLAUDE_VERSION:-latest}"
+
+  if [[ -n "\${CLAUDE_DOCKER_IMAGE_NAME:-}" ]]; then
+    printf '%s\n' "\${CLAUDE_DOCKER_IMAGE_NAME}"
+    return
+  fi
+
+  claude_version="\$(sanitize_tag_value "\${claude_version}")"
+  printf '%s:%s\n' "\${image_repo}" "aws\${install_awscli}-node\${install_node}-n\${node_major}-java\${install_java}-j\${java_version}-maven\${install_maven}-claude\${install_claude}-c\${claude_version}"
+}
 
 ensure_image() {
-  if ! docker image inspect "\${IMAGE_NAME}" >/dev/null 2>&1; then
-    docker build -t "\${IMAGE_NAME}" -f "\${DOCKERFILE_PATH}" "\${DOCKER_CONTEXT}"
+  local image_name="\$1"
+  local build_args=(
+    --build-arg "INSTALL_AWSCLI=\${CLAUDE_DOCKER_INSTALL_AWSCLI:-1}"
+    --build-arg "INSTALL_NODE=\${CLAUDE_DOCKER_INSTALL_NODE:-1}"
+    --build-arg "INSTALL_CLAUDE=\${CLAUDE_DOCKER_INSTALL_CLAUDE:-1}"
+    --build-arg "NODE_MAJOR=\${CLAUDE_DOCKER_NODE_MAJOR:-22}"
+    --build-arg "CLAUDE_NATIVE_VERSION=\${CLAUDE_DOCKER_CLAUDE_VERSION:-latest}"
+    --build-arg "INSTALL_JAVA=\${CLAUDE_DOCKER_INSTALL_JAVA:-0}"
+    --build-arg "JAVA_VERSION=\${CLAUDE_DOCKER_JAVA_VERSION:-21}"
+    --build-arg "INSTALL_MAVEN=\${CLAUDE_DOCKER_INSTALL_MAVEN:-0}"
+  )
+
+  if ! docker image inspect "\${image_name}" >/dev/null 2>&1 || [[ "\${CLAUDE_DOCKER_FORCE_BUILD:-0}" == "1" ]]; then
+    DOCKER_BUILDKIT=1 docker build "\${build_args[@]}" -t "\${image_name}" -f "\${DOCKERFILE_PATH}" "\${DOCKER_CONTEXT}"
   fi
 }
 
 main() {
+  local image_name
+  local auth_mode="\${CLAUDE_DOCKER_AUTH_MODE:-anthropic}"
   local docker_args=(
     run
     --rm
@@ -69,6 +108,7 @@ main() {
     -v "\${HOST_CONFIG_DIR}:/home/claude/.config"
     -e "ANTHROPIC_API_KEY=\${ANTHROPIC_API_KEY:-}"
     -e "ANTHROPIC_BASE_URL=\${ANTHROPIC_BASE_URL:-}"
+    -e "CLAUDE_CODE_USE_BEDROCK=\${CLAUDE_CODE_USE_BEDROCK:-}"
     -e "AWS_PROFILE=\${AWS_PROFILE:-}"
     -e "AWS_REGION=\${AWS_REGION:-}"
     -e "AWS_DEFAULT_REGION=\${AWS_DEFAULT_REGION:-}"
@@ -80,6 +120,7 @@ main() {
     -e "FORCE_COLOR=\${FORCE_COLOR:-1}"
   )
 
+  image_name="\$(build_image_name)"
   mkdir -p "\${HOST_CLAUDE_DIR}" "\${HOST_CACHE_DIR}" "\${HOST_CONFIG_DIR}"
 
   if [[ -t 0 && -t 1 ]]; then
@@ -90,8 +131,13 @@ main() {
     docker_args+=(-v "\${HOST_CLAUDE_FILE}:/home/claude/.claude.json")
   fi
 
-  if [[ -d "\${HOME}/.aws" ]]; then
+  if [[ -d "\${HOST_M2_DIR}" ]]; then
+    docker_args+=(-v "\${HOST_M2_DIR}:/home/claude/.m2")
+  fi
+
+  if [[ "\${auth_mode}" == "bedrock" && -d "\${HOME}/.aws" ]]; then
     docker_args+=(-v "\${HOME}/.aws:/home/claude/.aws:ro")
+    docker_args+=(-e "CLAUDE_CODE_USE_BEDROCK=1")
   fi
 
   if [[ -d "\${HOME}/.ssh" ]]; then
@@ -102,8 +148,8 @@ main() {
     docker_args+=(-v "\${HOME}/.gitconfig:/home/claude/.gitconfig:ro")
   fi
 
-  ensure_image
-  exec docker "\${docker_args[@]}" "\${IMAGE_NAME}" "\$@"
+  ensure_image "\${image_name}"
+  exec docker "\${docker_args[@]}" "\${image_name}" "\$@"
 }
 
 main "\$@"

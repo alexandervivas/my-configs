@@ -3,10 +3,15 @@ FROM ubuntu:24.04 AS os-base
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG INSTALL_AWSCLI=1
+ARG INSTALL_JAVA=0
+ARG INSTALL_MAVEN=0
+ARG JAVA_VERSION=21
 ARG TARGETARCH
 
 # Core tools for an AI coding/dev container
-RUN set -eux; \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    set -eux; \
     apt-get update; \
     packages="\
       ca-certificates \
@@ -22,6 +27,17 @@ RUN set -eux; \
       vim \
       wget \
       zsh"; \
+    if [ "${INSTALL_JAVA}" = "1" ] || [ "${INSTALL_MAVEN}" = "1" ]; then \
+      case "${JAVA_VERSION}" in \
+        17) java_package="openjdk-17-jdk" ;; \
+        21) java_package="openjdk-21-jdk" ;; \
+        *) echo "Unsupported JAVA_VERSION: ${JAVA_VERSION}" >&2; exit 1 ;; \
+      esac; \
+      packages="${packages} ${java_package}"; \
+    fi; \
+    if [ "${INSTALL_MAVEN}" = "1" ]; then \
+      packages="${packages} maven"; \
+    fi; \
     apt-get install -y --no-install-recommends ${packages}; \
     rm -rf /var/lib/apt/lists/*
 

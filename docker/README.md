@@ -18,9 +18,11 @@ Dockerized Claude Code with a non-root runtime user and a host-side wrapper inst
 The image includes:
 
 - Node.js 22
-- `@anthropic-ai/claude-code`
+- native-installed Claude Code
 - common CLI tools such as `git`, `rg`, `jq`, `zsh`
 - optional AWS CLI v2
+- optional OpenJDK 17 or 21
+- optional Maven
 
 ## Build manually
 
@@ -74,6 +76,40 @@ Supported variables:
 - `INSTALL_PATH`: target path for the generated wrapper
 - `IMAGE_NAME`: Docker image tag used by the generated wrapper
 
+## Runtime parameterization
+
+The generated wrapper is driven by environment variables so you can keep one
+installed `claude` command and vary the image features per project.
+
+Build-related variables:
+
+- `CLAUDE_DOCKER_IMAGE_REPO`: image repository prefix, default `claude-dev`
+- `CLAUDE_DOCKER_IMAGE_NAME`: full image name override
+- `CLAUDE_DOCKER_FORCE_BUILD`: rebuild even if the computed image already exists
+- `CLAUDE_DOCKER_INSTALL_AWSCLI`: `1` or `0`, default `1`
+- `CLAUDE_DOCKER_INSTALL_NODE`: `1` or `0`, default `1`
+- `CLAUDE_DOCKER_INSTALL_CLAUDE`: `1` or `0`, default `1`
+- `CLAUDE_DOCKER_CLAUDE_VERSION`: native Claude version, default `latest`
+- `CLAUDE_DOCKER_NODE_MAJOR`: Node major version, default `22`
+- `CLAUDE_DOCKER_INSTALL_JAVA`: `1` or `0`, default `0`
+- `CLAUDE_DOCKER_JAVA_VERSION`: `17` or `21`, default `21`
+- `CLAUDE_DOCKER_INSTALL_MAVEN`: `1` or `0`, default `0`
+
+Runtime/auth variables:
+
+- `CLAUDE_DOCKER_AUTH_MODE`: `anthropic` or `bedrock`, default `anthropic`
+- `AWS_PROFILE`, `AWS_REGION`, `AWS_DEFAULT_REGION`, `BEDROCK_MODEL_ID`
+- `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`
+
+Examples:
+
+```bash
+CLAUDE_DOCKER_INSTALL_JAVA=1 CLAUDE_DOCKER_JAVA_VERSION=21 claude --version
+CLAUDE_DOCKER_INSTALL_JAVA=1 CLAUDE_DOCKER_INSTALL_MAVEN=1 claude --version
+CLAUDE_DOCKER_AUTH_MODE=bedrock AWS_PROFILE=default AWS_REGION=us-east-1 claude
+CLAUDE_DOCKER_FORCE_BUILD=1 CLAUDE_DOCKER_CLAUDE_VERSION=latest claude --version
+```
+
 ## Runtime mounts
 
 The generated wrapper always mounts:
@@ -88,6 +124,10 @@ If present, it also mounts read-only:
 - `~/.aws`
 - `~/.ssh`
 - `~/.gitconfig`
+
+If present, it also mounts read-write:
+
+- `~/.m2`
 
 ## Verification
 
