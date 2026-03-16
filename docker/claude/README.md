@@ -140,12 +140,12 @@ The generated wrapper always mounts:
 
 If present, it also mounts read-only:
 
-- `~/.aws`
 - `~/.ssh`
 - `~/.gitconfig`
 
 If present, it also mounts read-write:
 
+- `~/.aws` when auth mode is `bedrock` so AWS SSO can refresh tokens in `~/.aws/sso/cache`
 - `~/.m2`
 
 ## Verification

@@ -282,6 +282,7 @@ main() {
   local mount_ssh="\${CLAUDE_DOCKER_MOUNT_SSH:-\${DEFAULT_MOUNT_SSH}}"
   local mount_gitconfig="\${CLAUDE_DOCKER_MOUNT_GITCONFIG:-\${DEFAULT_MOUNT_GITCONFIG}}"
   local mount_m2="\${CLAUDE_DOCKER_MOUNT_M2:-\${DEFAULT_MOUNT_M2}}"
+  local aws_mount_mode="ro"
   local docker_args=(
     run
     --rm
@@ -309,6 +310,10 @@ main() {
   image_name="\$(build_image_name)"
   mkdir -p "\${HOST_CLAUDE_DIR}" "\${HOST_CACHE_DIR}" "\${HOST_CONFIG_DIR}"
 
+  if [[ "\${auth_mode}" == "bedrock" ]]; then
+    aws_mount_mode="rw"
+  fi
+
   if [[ -t 0 && -t 1 ]]; then
     docker_args+=(-t)
   fi
@@ -323,12 +328,12 @@ main() {
 
   if [[ "\${mount_aws}" == "auto" ]]; then
     if [[ "\${auth_mode}" == "bedrock" && -d "\${HOME}/.aws" ]]; then
-      docker_args+=(-v "\${HOME}/.aws:/home/claude/.aws:ro")
+      docker_args+=(-v "\${HOME}/.aws:/home/claude/.aws:\${aws_mount_mode}")
       docker_args+=(-e "CLAUDE_CODE_USE_BEDROCK=1")
     fi
   elif [[ "\${mount_aws}" == "1" || "\${mount_aws}" == "on" ]]; then
     if [[ -d "\${HOME}/.aws" ]]; then
-      docker_args+=(-v "\${HOME}/.aws:/home/claude/.aws:ro")
+      docker_args+=(-v "\${HOME}/.aws:/home/claude/.aws:\${aws_mount_mode}")
     fi
     if [[ "\${auth_mode}" == "bedrock" ]]; then
       docker_args+=(-e "CLAUDE_CODE_USE_BEDROCK=1")
