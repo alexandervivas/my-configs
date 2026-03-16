@@ -19,6 +19,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       git \
       jq \
       less \
+      ncurses-term \
       openssh-client \
       python3 \
       python3-pip \

@@ -237,6 +237,13 @@ sanitize_tag_value() {
   printf '%s' "\$1" | tr '/: ' '-' | tr -cd '[:alnum:]._-'
 }
 
+add_env_if_set() {
+  local var_name="\$1"
+  if [[ -n "\${!var_name:-}" ]]; then
+    docker_args+=(-e "\${var_name}=\${!var_name}")
+  fi
+}
+
 build_image_name() {
   local image_repo="\${CLAUDE_DOCKER_IMAGE_REPO:-\${IMAGE_REPO}}"
   local install_awscli="\${CLAUDE_DOCKER_INSTALL_AWSCLI:-\${DEFAULT_INSTALL_AWSCLI}}"
@@ -302,6 +309,7 @@ main() {
     -e "BEDROCK_MODEL_ID=\${BEDROCK_MODEL_ID:-}"
     -e "TERM=\${TERM:-xterm-256color}"
     -e "COLORTERM=\${COLORTERM:-truecolor}"
+    -e "LANG=\${LANG:-C.UTF-8}"
     -e "CLICOLOR=\${CLICOLOR:-1}"
     -e "CLICOLOR_FORCE=\${CLICOLOR_FORCE:-1}"
     -e "FORCE_COLOR=\${FORCE_COLOR:-1}"
@@ -317,6 +325,12 @@ main() {
   if [[ -t 0 && -t 1 ]]; then
     docker_args+=(-t)
   fi
+
+  add_env_if_set LC_ALL
+  add_env_if_set LC_CTYPE
+  add_env_if_set TERM_PROGRAM
+  add_env_if_set TERM_PROGRAM_VERSION
+  add_env_if_set TERM_SESSION_ID
 
   if [[ -f "\${HOST_CLAUDE_FILE}" ]]; then
     docker_args+=(-v "\${HOST_CLAUDE_FILE}:/home/claude/.claude.json")
