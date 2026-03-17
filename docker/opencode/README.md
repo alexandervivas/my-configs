@@ -25,7 +25,7 @@ The image includes:
 ## Build manually
 
 ```bash
-docker build -t opencode-dev -f opencode/Dockerfile opencode
+docker build -t opencode-dev -f docker/opencode/Dockerfile docker
 ```
 
 Run it directly:

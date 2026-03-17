@@ -27,7 +27,7 @@ The image includes:
 ## Build manually
 
 ```bash
-docker build -t claude-dev -f docker/Dockerfile docker
+docker build -t claude-dev -f docker/claude/Dockerfile docker
 ```
 
 Run it directly:
@@ -153,7 +153,7 @@ If present, it also mounts read-write:
 Verified locally with:
 
 ```bash
-docker build -t claude-dev-test -f docker/Dockerfile docker
+docker build -t claude-dev-test -f docker/claude/Dockerfile docker
 docker run --rm --entrypoint sh claude-dev-test -lc 'id && which claude && claude --version'
 docker run --rm claude-dev-test --help
 ```

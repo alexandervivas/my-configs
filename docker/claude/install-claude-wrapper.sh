@@ -3,8 +3,8 @@ set -euo pipefail
 
 INSTALL_PATH="${INSTALL_PATH:-/usr/local/bin/claude}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOCKER_CONTEXT="${SCRIPT_DIR}"
 DOCKERFILE_PATH="${SCRIPT_DIR}/Dockerfile"
+DOCKER_CONTEXT="${SCRIPT_DIR}/.."
 IMAGE_NAME="${IMAGE_NAME:-claude-dev}"
 
 DEFAULT_AUTH_MODE="${DEFAULT_AUTH_MODE:-anthropic}"
@@ -107,6 +107,7 @@ prompt_multi_choice() {
   local token
   local option
   local valid
+  local normalized_answer
 
   if [[ "${INTERACTIVE}" != "1" || ! -t 0 ]]; then
     printf '%s' "$(normalize_csv_tokens "${default_value}")"
@@ -114,11 +115,19 @@ prompt_multi_choice() {
   fi
 
   while true; do
-    printf '%s [%s]: ' "${prompt}" "${default_value}" >&2
+    printf '%s [empty=none]: ' "${prompt}" >&2
     IFS= read -r answer
-    answer="$(normalize_csv_tokens "${answer:-${default_value}}")"
+    normalized_answer="$(normalize_csv_tokens "${answer}")"
+    if [[ -z "${normalized_answer}" || "${normalized_answer}" == "none" ]]; then
+      printf '%s' "none"
+      return
+    fi
+    if [[ "${normalized_answer}" == "all" ]]; then
+      printf '%s' "$(printf '%s\n' "${options[@]}" | grep -vx 'none' | grep -vx 'all' | xargs)"
+      return
+    fi
     valid="1"
-    for token in ${answer}; do
+    for token in ${normalized_answer}; do
       if [[ -z "${token}" || "${token}" == "none" ]]; then
         continue
       fi
@@ -134,7 +143,7 @@ prompt_multi_choice() {
       fi
     done
     if [[ "${valid}" == "1" ]]; then
-      printf '%s' "${answer}"
+      printf '%s' "${normalized_answer}"
       return
     fi
   done
@@ -158,17 +167,12 @@ collect_defaults() {
     default_mounts="aws"
   fi
   if [[ "${DEFAULT_MOUNT_SSH}" == "1" ]]; then
-    default_mounts="${default_mounts:+${default_mounts},}ssh"
+    default_mounts="${default_mounts:+${default_mounts} }ssh"
   fi
-  if [[ "${DEFAULT_MOUNT_GITCONFIG}" == "1" ]]; then
-    default_mounts="${default_mounts:+${default_mounts},}gitconfig"
-  fi
-  if [[ "${DEFAULT_MOUNT_M2}" == "1" ]]; then
-    default_mounts="${default_mounts:+${default_mounts},}m2"
-  fi
+  default_mounts="$(normalize_csv_tokens "${default_mounts}")"
   default_mounts="${default_mounts:-none}"
 
-  selected_extras="$(prompt_multi_choice "Select image extras (comma-separated: java, none)" "${default_extras}" java none)"
+  selected_extras="$(prompt_multi_choice "Select image extras (comma-separated: java, all, none)" "${default_extras}" java all none)"
   if [[ "${DEFAULT_AUTH_MODE}" == "bedrock" ]]; then
     DEFAULT_INSTALL_AWSCLI="1"
   else
@@ -182,11 +186,11 @@ collect_defaults() {
     DEFAULT_JAVA_VERSION="$(prompt_choice "Default Java version" "${DEFAULT_JAVA_VERSION}" 17 21)"
   fi
 
-  selected_mounts="$(prompt_multi_choice "Select host mounts (comma-separated: aws, ssh, gitconfig, m2, none)" "${default_mounts}" aws ssh gitconfig m2 none)"
+  selected_mounts="$(prompt_multi_choice "Select host mounts (comma-separated: aws, ssh, all, none)" "${default_mounts}" aws ssh all none)"
   DEFAULT_MOUNT_AWS="off"
   DEFAULT_MOUNT_SSH="0"
-  DEFAULT_MOUNT_GITCONFIG="0"
-  DEFAULT_MOUNT_M2="0"
+  DEFAULT_MOUNT_GITCONFIG="1"
+  DEFAULT_MOUNT_M2="${DEFAULT_INSTALL_MAVEN}"
   if [[ "${DEFAULT_AUTH_MODE}" == "bedrock" ]] || csv_has_token "${selected_mounts}" "aws"; then
     if [[ "${DEFAULT_AUTH_MODE}" == "bedrock" ]]; then
       DEFAULT_MOUNT_AWS="auto"
@@ -196,12 +200,6 @@ collect_defaults() {
   fi
   if csv_has_token "${selected_mounts}" "ssh"; then
     DEFAULT_MOUNT_SSH="1"
-  fi
-  if csv_has_token "${selected_mounts}" "gitconfig"; then
-    DEFAULT_MOUNT_GITCONFIG="1"
-  fi
-  if csv_has_token "${selected_mounts}" "m2"; then
-    DEFAULT_MOUNT_M2="1"
   fi
 }
 

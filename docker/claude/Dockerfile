@@ -7,40 +7,19 @@ ARG INSTALL_JAVA=0
 ARG INSTALL_MAVEN=0
 ARG JAVA_VERSION=21
 ARG TARGETARCH
+ARG EXTRA_APT_PACKAGES=
+
+COPY shared/install-os-base.sh /tmp/docker-shared/install-os-base.sh
+COPY shared/create-runtime-user.sh /tmp/docker-shared/create-runtime-user.sh
 
 # Core tools for an AI coding/dev container
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    set -eux; \
-    apt-get update; \
-    packages="\
-      ca-certificates \
-      curl \
-      git \
-      jq \
-      less \
-      ncurses-term \
-      openssh-client \
-      python3 \
-      python3-pip \
-      ripgrep \
-      unzip \
-      vim \
-      wget \
-      zsh"; \
-    if [ "${INSTALL_JAVA}" = "1" ] || [ "${INSTALL_MAVEN}" = "1" ]; then \
-      case "${JAVA_VERSION}" in \
-        17) java_package="openjdk-17-jdk" ;; \
-        21) java_package="openjdk-21-jdk" ;; \
-        *) echo "Unsupported JAVA_VERSION: ${JAVA_VERSION}" >&2; exit 1 ;; \
-      esac; \
-      packages="${packages} ${java_package}"; \
-    fi; \
-    if [ "${INSTALL_MAVEN}" = "1" ]; then \
-      packages="${packages} maven"; \
-    fi; \
-    apt-get install -y --no-install-recommends ${packages}; \
-    rm -rf /var/lib/apt/lists/*
+    INSTALL_JAVA="${INSTALL_JAVA}" \
+    INSTALL_MAVEN="${INSTALL_MAVEN}" \
+    JAVA_VERSION="${JAVA_VERSION}" \
+    EXTRA_APT_PACKAGES="${EXTRA_APT_PACKAGES}" \
+    /bin/bash /tmp/docker-shared/install-os-base.sh
 
 # Install AWS CLI v2 from official AWS bundle (optional)
 RUN set -eux; \
@@ -61,31 +40,14 @@ RUN set -eux; \
 ARG USERNAME=claude
 ARG USER_UID=1000
 ARG USER_GID=1000
-RUN set -eux; \
-    if getent group "${USER_GID}" >/dev/null; then \
-      primary_group="$(getent group "${USER_GID}" | cut -d: -f1)"; \
-    else \
-      primary_group="${USERNAME}"; \
-      groupadd --gid "${USER_GID}" "${primary_group}"; \
-    fi; \
-    if id -u "${USERNAME}" >/dev/null 2>&1; then \
-      usermod --gid "${USER_GID}" --shell /bin/zsh "${USERNAME}"; \
-    elif getent passwd "${USER_UID}" >/dev/null; then \
-      existing_user="$(getent passwd "${USER_UID}" | cut -d: -f1)"; \
-      usermod --login "${USERNAME}" --home "/home/${USERNAME}" --move-home --gid "${USER_GID}" --shell /bin/zsh "${existing_user}"; \
-      if getent group "${existing_user}" >/dev/null 2>&1; then \
-        groupmod --new-name "${USERNAME}" "${existing_user}"; \
-      fi; \
-      primary_group="$(id -gn "${USERNAME}")"; \
-    else \
-      useradd --uid "${USER_UID}" --gid "${USER_GID}" -m "${USERNAME}" -s /bin/zsh; \
-    fi; \
-    usermod --groups "" "${USERNAME}"; \
-    chown -R "${USERNAME}:${primary_group}" "/home/${USERNAME}"
-
-# Workspace + optional persistent caches
-RUN mkdir -p /workspace /home/${USERNAME}/.cache /home/${USERNAME}/.config /home/${USERNAME}/.claude \
-    && chown -R ${USERNAME}:${USER_GID} /workspace /home/${USERNAME}
+RUN EXTRA_HOME_DIRS="$(printf '%s\n' \
+      "/home/${USERNAME}/.cache" \
+      "/home/${USERNAME}/.config" \
+      "/home/${USERNAME}/.claude")" \
+    USERNAME="${USERNAME}" \
+    USER_UID="${USER_UID}" \
+    USER_GID="${USER_GID}" \
+    /bin/bash /tmp/docker-shared/create-runtime-user.sh
 
 FROM os-base AS claude-runtime
 
