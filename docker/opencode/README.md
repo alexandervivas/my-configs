@@ -43,14 +43,23 @@ The installer is interactive and writes a self-contained wrapper to
 `/usr/local/bin/opencode`.
 
 ```bash
-sudo /Users/alexander.vivas.ext/git/alexandervivas/my-configs/docker/opencode/install-opencode-wrapper.sh
+sudo /Users/alexander.vivas.ext/git/alexandervivas/my-configs/docker/install-wrapper.sh
+```
+
+If you want to skip the agent prompt:
+
+```bash
+sudo /Users/alexander.vivas.ext/git/alexandervivas/my-configs/docker/install-wrapper.sh opencode
 ```
 
 The installer asks for a few grouped defaults such as:
 
 - auth mode: `bedrock` or `other`
-- image extras in one prompt: `java`
-- host mounts in one prompt: `aws`, `ssh`, `gitconfig`, `m2`, `opencode`
+- image extras in one prompt: `java`, `all`, `none`
+- host mounts in one prompt: `aws`, `ssh`, `opencode`, `all`, `none`
+- selecting `java` also enables Maven and `~/.m2` mounting automatically
+- `~/.gitconfig` mounting is always enabled by default
+- pressing Enter on the multi-select prompts means `none`
 - if auth mode is `bedrock`, AWS CLI and AWS mounting defaults are implied automatically
 - follow-up specifics only when needed, for example Java version if `java` is selected
 - default opencode version
@@ -79,7 +88,7 @@ opencode run "summarize this repository"
 You can override these when generating the wrapper:
 
 ```bash
-IMAGE_NAME=opencode-dev-test INSTALL_PATH=/tmp/opencode bash opencode/install-opencode-wrapper.sh
+IMAGE_NAME=opencode-dev-test INSTALL_PATH=/tmp/opencode bash docker/install-wrapper.sh opencode
 ```
 
 Supported variables:

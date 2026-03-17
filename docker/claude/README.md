@@ -45,14 +45,23 @@ The installer is interactive and writes a self-contained wrapper to
 `/usr/local/bin/claude`.
 
 ```bash
-sudo /Users/alexander.vivas.ext/git/alexandervivas/my-configs/docker/install-claude-wrapper.sh
+sudo /Users/alexander.vivas.ext/git/alexandervivas/my-configs/docker/install-wrapper.sh
+```
+
+If you want to skip the agent prompt:
+
+```bash
+sudo /Users/alexander.vivas.ext/git/alexandervivas/my-configs/docker/install-wrapper.sh claude
 ```
 
 The installer asks for a few grouped defaults such as:
 
 - auth mode: `anthropic` or `bedrock`
-- image extras in one prompt: `java`
-- host mounts in one prompt: `aws`, `ssh`, `gitconfig`, `m2`
+- image extras in one prompt: `java`, `all`, `none`
+- host mounts in one prompt: `aws`, `ssh`, `all`, `none`
+- selecting `java` also enables Maven and `~/.m2` mounting automatically
+- `~/.gitconfig` mounting is always enabled by default
+- pressing Enter on the multi-select prompts means `none`
 - if auth mode is `bedrock`, AWS CLI and AWS mounting defaults are implied automatically
 - follow-up specifics only when needed, for example Java version if `java` is selected
 - default Claude version
@@ -81,7 +90,7 @@ claude -p "summarize this repository"
 You can override these when generating the wrapper:
 
 ```bash
-IMAGE_NAME=claude-dev-test INSTALL_PATH=/tmp/claude bash docker/install-claude-wrapper.sh
+IMAGE_NAME=claude-dev-test INSTALL_PATH=/tmp/claude bash docker/install-wrapper.sh claude
 ```
 
 Supported variables:
