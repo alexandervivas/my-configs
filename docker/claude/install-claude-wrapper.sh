@@ -251,6 +251,35 @@ add_env_if_set() {
   fi
 }
 
+find_gitenv() {
+  local dir="\$(pwd)"
+  local depth=0
+  while [[ "\${depth}" -le 2 ]]; do
+    if [[ -f "\${dir}/.gitenv" ]]; then
+      printf '%s\n' "\${dir}/.gitenv"
+      return
+    fi
+    [[ "\${dir}" == "/" ]] && return
+    dir="\$(dirname "\${dir}")"
+    (( depth++ ))
+  done
+}
+
+load_gitenv() {
+  local gitenv_file
+  gitenv_file="\$(find_gitenv)"
+  [[ -z "\${gitenv_file}" ]] && return
+  local key value
+  while IFS='=' read -r key value; do
+    [[ -z "\${key}" || "\${key}" == \#* ]] && continue
+    key="\$(printf '%s' "\${key}" | xargs)"
+    [[ -z "\${key}" ]] && continue
+    if [[ -z "\${!key:-}" ]]; then
+      docker_args+=(-e "\${key}=\${value}")
+    fi
+  done < "\${gitenv_file}"
+}
+
 build_image_name() {
   local image_repo="\${CLAUDE_DOCKER_IMAGE_REPO:-\${IMAGE_REPO}}"
   local install_awscli="\${CLAUDE_DOCKER_INSTALL_AWSCLI:-\${DEFAULT_INSTALL_AWSCLI}}"
@@ -344,6 +373,7 @@ main() {
   add_env_if_set GH_TOKEN
   add_env_if_set GH_HOST
   add_env_if_set GITHUB_HOST
+  load_gitenv
 
   if [[ -f "\${HOST_CLAUDE_FILE}" ]]; then
     docker_args+=(-v "\${HOST_CLAUDE_FILE}:/home/claude/.claude.json")
