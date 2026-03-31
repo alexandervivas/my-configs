@@ -340,6 +340,10 @@ main() {
   add_env_if_set TERM_PROGRAM
   add_env_if_set TERM_PROGRAM_VERSION
   add_env_if_set TERM_SESSION_ID
+  add_env_if_set GITHUB_TOKEN
+  add_env_if_set GH_TOKEN
+  add_env_if_set GH_HOST
+  add_env_if_set GITHUB_HOST
 
   if [[ -f "\${HOST_CLAUDE_FILE}" ]]; then
     docker_args+=(-v "\${HOST_CLAUDE_FILE}:/home/claude/.claude.json")
