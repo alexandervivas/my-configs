@@ -251,6 +251,16 @@ add_env_if_set() {
   fi
 }
 
+inject_github_git_config() {
+  local token="\${GITHUB_TOKEN:-\${GH_TOKEN:-}}"
+  [[ -z "\${token}" ]] && return
+  docker_args+=(
+    -e "GIT_CONFIG_COUNT=1"
+    -e "GIT_CONFIG_KEY_0=url.https://x-access-token:\${token}@github.com/.insteadOf"
+    -e "GIT_CONFIG_VALUE_0=https://github.com/"
+  )
+}
+
 find_gitenv() {
   local dir="\$(pwd)"
   local depth=0
@@ -374,6 +384,7 @@ main() {
   add_env_if_set GH_HOST
   add_env_if_set GITHUB_HOST
   load_gitenv
+  inject_github_git_config
 
   if [[ -f "\${HOST_CLAUDE_FILE}" ]]; then
     docker_args+=(-v "\${HOST_CLAUDE_FILE}:/home/claude/.claude.json")
