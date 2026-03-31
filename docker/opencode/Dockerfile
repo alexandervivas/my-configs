@@ -6,8 +6,10 @@ ARG INSTALL_AWSCLI=1
 ARG INSTALL_JAVA=0
 ARG INSTALL_MAVEN=0
 ARG JAVA_VERSION=21
+ARG INSTALL_GH=0
 ARG TARGETARCH
 ARG EXTRA_APT_PACKAGES=tar
+ARG NODE_MAJOR=22
 
 COPY shared/install-os-base.sh /tmp/docker-shared/install-os-base.sh
 COPY shared/create-runtime-user.sh /tmp/docker-shared/create-runtime-user.sh
@@ -17,6 +19,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     INSTALL_JAVA="${INSTALL_JAVA}" \
     INSTALL_MAVEN="${INSTALL_MAVEN}" \
     JAVA_VERSION="${JAVA_VERSION}" \
+    INSTALL_GH="${INSTALL_GH}" \
     EXTRA_APT_PACKAGES="${EXTRA_APT_PACKAGES}" \
     /bin/bash /tmp/docker-shared/install-os-base.sh
 

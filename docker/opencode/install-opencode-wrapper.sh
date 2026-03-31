@@ -14,6 +14,7 @@ DEFAULT_OPENCODE_VERSION="${DEFAULT_OPENCODE_VERSION:-1.2.27}"
 DEFAULT_INSTALL_JAVA="${DEFAULT_INSTALL_JAVA:-0}"
 DEFAULT_JAVA_VERSION="${DEFAULT_JAVA_VERSION:-21}"
 DEFAULT_INSTALL_MAVEN="${DEFAULT_INSTALL_MAVEN:-0}"
+DEFAULT_INSTALL_GH="${DEFAULT_INSTALL_GH:-0}"
 DEFAULT_MOUNT_AWS="${DEFAULT_MOUNT_AWS:-auto}"
 DEFAULT_MOUNT_SSH="${DEFAULT_MOUNT_SSH:-1}"
 DEFAULT_MOUNT_GITCONFIG="${DEFAULT_MOUNT_GITCONFIG:-1}"
@@ -161,6 +162,9 @@ collect_defaults() {
   if [[ "${DEFAULT_INSTALL_JAVA}" == "1" ]]; then
     default_extras="java"
   fi
+  if [[ "${DEFAULT_INSTALL_GH}" == "1" ]]; then
+    default_extras="${default_extras:+${default_extras} }git"
+  fi
 
   if [[ "${DEFAULT_MOUNT_AWS}" != "off" && "${DEFAULT_MOUNT_AWS}" != "0" ]]; then
     default_mounts="aws"
@@ -174,7 +178,7 @@ collect_defaults() {
   default_mounts="$(normalize_csv_tokens "${default_mounts}")"
   default_mounts="${default_mounts:-none}"
 
-  selected_extras="$(prompt_multi_choice "Select image extras (comma-separated: java, all, none)" "${default_extras}" java all none)"
+  selected_extras="$(prompt_multi_choice "Select image extras (comma-separated: java, git, all, none)" "${default_extras}" java git all none)"
   if [[ "${DEFAULT_AUTH_MODE}" == "bedrock" ]]; then
     DEFAULT_INSTALL_AWSCLI="1"
   else
@@ -182,10 +186,14 @@ collect_defaults() {
   fi
   DEFAULT_INSTALL_JAVA="0"
   DEFAULT_INSTALL_MAVEN="0"
+  DEFAULT_INSTALL_GH="0"
   if csv_has_token "${selected_extras}" "java"; then
     DEFAULT_INSTALL_JAVA="1"
     DEFAULT_INSTALL_MAVEN="1"
     DEFAULT_JAVA_VERSION="$(prompt_choice "Default Java version" "${DEFAULT_JAVA_VERSION}" 17 21)"
+  fi
+  if csv_has_token "${selected_extras}" "git"; then
+    DEFAULT_INSTALL_GH="1"
   fi
 
   selected_mounts="$(prompt_multi_choice "Select host mounts (comma-separated: aws, ssh, opencode, all, none)" "${default_mounts}" aws ssh opencode all none)"
@@ -225,6 +233,7 @@ DEFAULT_OPENCODE_VERSION="${DEFAULT_OPENCODE_VERSION}"
 DEFAULT_INSTALL_JAVA="${DEFAULT_INSTALL_JAVA}"
 DEFAULT_JAVA_VERSION="${DEFAULT_JAVA_VERSION}"
 DEFAULT_INSTALL_MAVEN="${DEFAULT_INSTALL_MAVEN}"
+DEFAULT_INSTALL_GH="${DEFAULT_INSTALL_GH}"
 DEFAULT_MOUNT_AWS="${DEFAULT_MOUNT_AWS}"
 DEFAULT_MOUNT_SSH="${DEFAULT_MOUNT_SSH}"
 DEFAULT_MOUNT_GITCONFIG="${DEFAULT_MOUNT_GITCONFIG}"
@@ -254,6 +263,7 @@ build_image_name() {
   local install_java="\${OPENCODE_DOCKER_INSTALL_JAVA:-\${DEFAULT_INSTALL_JAVA}}"
   local java_version="\${OPENCODE_DOCKER_JAVA_VERSION:-\${DEFAULT_JAVA_VERSION}}"
   local install_maven="\${OPENCODE_DOCKER_INSTALL_MAVEN:-\${DEFAULT_INSTALL_MAVEN}}"
+  local install_gh="\${OPENCODE_DOCKER_INSTALL_GH:-\${DEFAULT_INSTALL_GH}}"
   local opencode_version="\${OPENCODE_DOCKER_OPENCODE_VERSION:-\${DEFAULT_OPENCODE_VERSION}}"
 
   if [[ -n "\${OPENCODE_DOCKER_IMAGE_NAME:-}" ]]; then
@@ -262,7 +272,7 @@ build_image_name() {
   fi
 
   opencode_version="\$(sanitize_tag_value "\${opencode_version}")"
-  printf '%s:%s\n' "\${image_repo}" "aws\${install_awscli}-java\${install_java}-j\${java_version}-maven\${install_maven}-opencode\${install_opencode}-o\${opencode_version}"
+  printf '%s:%s\n' "\${image_repo}" "aws\${install_awscli}-java\${install_java}-j\${java_version}-maven\${install_maven}-gh\${install_gh}-opencode\${install_opencode}-o\${opencode_version}"
 }
 
 ensure_image() {
@@ -274,6 +284,7 @@ ensure_image() {
     --build-arg "INSTALL_JAVA=\${OPENCODE_DOCKER_INSTALL_JAVA:-\${DEFAULT_INSTALL_JAVA}}"
     --build-arg "JAVA_VERSION=\${OPENCODE_DOCKER_JAVA_VERSION:-\${DEFAULT_JAVA_VERSION}}"
     --build-arg "INSTALL_MAVEN=\${OPENCODE_DOCKER_INSTALL_MAVEN:-\${DEFAULT_INSTALL_MAVEN}}"
+    --build-arg "INSTALL_GH=\${OPENCODE_DOCKER_INSTALL_GH:-\${DEFAULT_INSTALL_GH}}"
   )
 
   if ! docker image inspect "\${image_name}" >/dev/null 2>&1 || [[ "\${OPENCODE_DOCKER_FORCE_BUILD:-0}" == "1" ]]; then
