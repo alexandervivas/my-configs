@@ -71,6 +71,11 @@ RUN set -eux; \
       tar -xzf /tmp/opencode.tar.gz -C /tmp; \
       install -m 0755 /tmp/opencode /usr/local/bin/opencode; \
       rm -rf /tmp/opencode /tmp/opencode.tar.gz; \
+      curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -; \
+      apt-get update; \
+      apt-get install -y --no-install-recommends nodejs; \
+      rm -rf /var/lib/apt/lists/*; \
+      npm install -g @fission-ai/openspec@latest; \
     fi
 
 WORKDIR /workspace

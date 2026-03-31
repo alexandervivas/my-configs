@@ -79,6 +79,7 @@ RUN set -eux; \
         install_version="${CLAUDE_NPM_VERSION}"; \
       fi; \
       su "${USERNAME}" -s /bin/sh -c "curl -fsSL https://claude.ai/install.sh | bash -s -- ${install_version}"; \
+      npm install -g @fission-ai/openspec@latest; \
     fi
 
 WORKDIR /workspace
