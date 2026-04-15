@@ -18,6 +18,7 @@ DEFAULT_INSTALL_GH="${DEFAULT_INSTALL_GH:-0}"
 DEFAULT_MOUNT_AWS="${DEFAULT_MOUNT_AWS:-auto}"
 DEFAULT_MOUNT_SSH="${DEFAULT_MOUNT_SSH:-1}"
 DEFAULT_MOUNT_GITCONFIG="${DEFAULT_MOUNT_GITCONFIG:-1}"
+DEFAULT_MOUNT_GH_CONFIG="${DEFAULT_MOUNT_GH_CONFIG:-auto}"
 DEFAULT_MOUNT_M2="${DEFAULT_MOUNT_M2:-1}"
 DEFAULT_MOUNT_OPENCODE_CONFIG="${DEFAULT_MOUNT_OPENCODE_CONFIG:-1}"
 INTERACTIVE="${INTERACTIVE:-1}"
@@ -172,6 +173,9 @@ collect_defaults() {
   if [[ "${DEFAULT_MOUNT_SSH}" == "1" ]]; then
     default_mounts="${default_mounts:+${default_mounts} }ssh"
   fi
+  if [[ "${DEFAULT_MOUNT_GH_CONFIG}" == "1" || "${DEFAULT_MOUNT_GH_CONFIG}" == "auto" ]]; then
+    default_mounts="${default_mounts:+${default_mounts} }gh"
+  fi
   if [[ "${DEFAULT_MOUNT_OPENCODE_CONFIG}" == "1" ]]; then
     default_mounts="${default_mounts:+${default_mounts} }opencode"
   fi
@@ -196,10 +200,11 @@ collect_defaults() {
     DEFAULT_INSTALL_GH="1"
   fi
 
-  selected_mounts="$(prompt_multi_choice "Select host mounts (comma-separated: aws, ssh, opencode, all, none)" "${default_mounts}" aws ssh opencode all none)"
+  selected_mounts="$(prompt_multi_choice "Select host mounts (comma-separated: aws, ssh, gh, opencode, all, none)" "${default_mounts}" aws ssh gh opencode all none)"
   DEFAULT_MOUNT_AWS="off"
   DEFAULT_MOUNT_SSH="0"
   DEFAULT_MOUNT_GITCONFIG="1"
+  DEFAULT_MOUNT_GH_CONFIG="0"
   DEFAULT_MOUNT_M2="${DEFAULT_INSTALL_MAVEN}"
   DEFAULT_MOUNT_OPENCODE_CONFIG="0"
   if [[ "${DEFAULT_AUTH_MODE}" == "bedrock" ]] || csv_has_token "${selected_mounts}" "aws"; then
@@ -211,6 +216,9 @@ collect_defaults() {
   fi
   if csv_has_token "${selected_mounts}" "ssh"; then
     DEFAULT_MOUNT_SSH="1"
+  fi
+  if csv_has_token "${selected_mounts}" "gh"; then
+    DEFAULT_MOUNT_GH_CONFIG="1"
   fi
   if csv_has_token "${selected_mounts}" "opencode"; then
     DEFAULT_MOUNT_OPENCODE_CONFIG="1"
@@ -237,12 +245,14 @@ DEFAULT_INSTALL_GH="${DEFAULT_INSTALL_GH}"
 DEFAULT_MOUNT_AWS="${DEFAULT_MOUNT_AWS}"
 DEFAULT_MOUNT_SSH="${DEFAULT_MOUNT_SSH}"
 DEFAULT_MOUNT_GITCONFIG="${DEFAULT_MOUNT_GITCONFIG}"
+DEFAULT_MOUNT_GH_CONFIG="${DEFAULT_MOUNT_GH_CONFIG}"
 DEFAULT_MOUNT_M2="${DEFAULT_MOUNT_M2}"
 DEFAULT_MOUNT_OPENCODE_CONFIG="${DEFAULT_MOUNT_OPENCODE_CONFIG}"
 HOST_CONFIG_DIR="\${HOME}/.config/opencode"
 HOST_CACHE_DIR="\${HOME}/.cache/opencode"
 HOST_DATA_DIR="\${HOME}/.local/share/opencode"
 HOST_STATE_DIR="\${HOME}/.local/state/opencode"
+HOST_GH_CONFIG_DIR="\${HOME}/.config/gh"
 HOST_M2_DIR="\${HOME}/.m2"
 
 sanitize_tag_value() {
@@ -337,6 +347,7 @@ main() {
   local mount_aws="\${OPENCODE_DOCKER_MOUNT_AWS:-\${DEFAULT_MOUNT_AWS}}"
   local mount_ssh="\${OPENCODE_DOCKER_MOUNT_SSH:-\${DEFAULT_MOUNT_SSH}}"
   local mount_gitconfig="\${OPENCODE_DOCKER_MOUNT_GITCONFIG:-\${DEFAULT_MOUNT_GITCONFIG}}"
+  local mount_gh_config="\${OPENCODE_DOCKER_MOUNT_GH_CONFIG:-\${DEFAULT_MOUNT_GH_CONFIG}}"
   local mount_m2="\${OPENCODE_DOCKER_MOUNT_M2:-\${DEFAULT_MOUNT_M2}}"
   local mount_opencode_config="\${OPENCODE_DOCKER_MOUNT_OPENCODE_CONFIG:-\${DEFAULT_MOUNT_OPENCODE_CONFIG}}"
   local aws_mount_mode="ro"
@@ -412,6 +423,10 @@ main() {
 
   if [[ "\${mount_gitconfig}" == "1" && -f "\${HOME}/.gitconfig" ]]; then
     docker_args+=(-v "\${HOME}/.gitconfig:/home/opencode/.gitconfig:ro")
+  fi
+
+  if [[ "\${mount_gh_config}" == "1" && -d "\${HOST_GH_CONFIG_DIR}" ]]; then
+    docker_args+=(-v "\${HOST_GH_CONFIG_DIR}:/home/opencode/.config/gh:ro")
   fi
 
   ensure_image "\${image_name}"
