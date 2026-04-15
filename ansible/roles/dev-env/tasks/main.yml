@@ -1,0 +1,30 @@
+- name: Add asdf plugins
+  shell: |
+    . "$(brew --prefix asdf)/libexec/asdf.sh"
+    asdf plugin add {{ item.name }} || true
+  loop: "{{ asdf_plugins }}"
+  changed_when: false
+
+- name: Install asdf plugin versions
+  shell: |
+    . "$(brew --prefix asdf)/libexec/asdf.sh"
+    {% if item.version == 'latest' %}
+    version=$(asdf latest {{ item.name }})
+    {% else %}
+    version=$(asdf latest {{ item.name }} {{ item.version }})
+    {% endif %}
+    asdf install {{ item.name }} $version
+  loop: "{{ asdf_plugins }}"
+  changed_when: false
+
+- name: Set global asdf versions
+  shell: |
+    . "$(brew --prefix asdf)/libexec/asdf.sh"
+    {% if item.version == 'latest' %}
+    version=$(asdf latest {{ item.name }})
+    {% else %}
+    version=$(asdf latest {{ item.name }} {{ item.version }})
+    {% endif %}
+    asdf set --home {{ item.name }} $version
+  loop: "{{ asdf_plugins }}"
+  changed_when: false

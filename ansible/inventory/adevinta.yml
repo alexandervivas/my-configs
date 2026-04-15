@@ -1,0 +1,12 @@
+all:
+  hosts:
+    localhost:
+      ansible_connection: local
+      git_name: "Alexander Vivas"
+      git_email: "alexander.vivas.ext@adevinta.com"
+      adevinta_username: "alexander.vivas.ext"
+      install_sdkman: true
+      extra_formulae:
+        - awscli
+        - kubectl
+      extra_casks: []

@@ -1,0 +1,22 @@
+- name: Check if Homebrew is installed
+  stat:
+    path: "/opt/homebrew/bin/brew"
+  register: brew_installed
+
+- name: Ensure Homebrew is in PATH
+  shell: eval "$(/opt/homebrew/bin/brew shellenv)"
+  when: brew_installed.stat.exists
+  changed_when: false
+
+- name: Install Homebrew formulae
+  community.general.homebrew:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ base_formulae + extra_formulae }}"
+
+- name: Install Homebrew casks
+  community.general.homebrew_cask:
+    name: "{{ item }}"
+    state: present
+    install_options: "adopt"
+  loop: "{{ base_casks + extra_casks }}"

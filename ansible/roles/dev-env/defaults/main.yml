@@ -1,0 +1,5 @@
+asdf_plugins:
+  - name: java
+    version: latest
+  - name: nodejs
+    version: latest

@@ -1,0 +1,12 @@
+- name: Laptop setup
+  hosts: all
+  connection: local
+  gather_facts: true
+
+  roles:
+    - role: homebrew
+      tags: homebrew
+    - role: dotfiles
+      tags: dotfiles
+    - role: dev-env
+      tags: dev-env

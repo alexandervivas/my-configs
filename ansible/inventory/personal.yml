@@ -1,0 +1,8 @@
+all:
+  hosts:
+    localhost:
+      ansible_connection: local
+      git_name: "Alexander Vivas"
+      git_email: "falexvr@gmail.com"
+      extra_formulae: []
+      extra_casks: []

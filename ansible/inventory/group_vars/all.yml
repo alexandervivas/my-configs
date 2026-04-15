@@ -1,0 +1,25 @@
+base_formulae:
+  - git
+  - asdf
+  - colima
+  - docker
+  - docker-compose
+  - direnv
+  - powerlevel10k
+  - zsh-syntax-highlighting
+  - zsh-history-substring-search
+
+base_casks:
+  - iterm2
+
+extra_formulae: []
+extra_casks: []
+
+colima_cpu: 4
+colima_memory: 8
+
+asdf_plugins:
+  - name: java
+    version: temurin-21
+  - name: nodejs
+    version: latest
