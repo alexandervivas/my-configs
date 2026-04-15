@@ -1,0 +1,7 @@
+export ADEVINTA_USER={{ adevinta_username }}
+
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+# Source personal customizations (not managed by Ansible)
+[[ -f ~/.zshrc.personal ]] && source ~/.zshrc.personal
