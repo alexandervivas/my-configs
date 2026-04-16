@@ -3,3 +3,7 @@ memory: {{ colima_memory }}
 disk: 60
 runtime: docker
 arch: host
+mountType: virtiofs
+mounts:
+  - location: {{ ansible_facts['env']['HOME'] }}
+    writable: true
