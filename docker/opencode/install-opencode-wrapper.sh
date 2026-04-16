@@ -10,7 +10,6 @@ IMAGE_NAME="${IMAGE_NAME:-opencode-dev}"
 DEFAULT_AUTH_MODE="${DEFAULT_AUTH_MODE:-bedrock}"
 DEFAULT_INSTALL_AWSCLI="${DEFAULT_INSTALL_AWSCLI:-1}"
 DEFAULT_INSTALL_OPENCODE="${DEFAULT_INSTALL_OPENCODE:-1}"
-DEFAULT_OPENCODE_VERSION="${DEFAULT_OPENCODE_VERSION:-1.2.27}"
 DEFAULT_INSTALL_JAVA="${DEFAULT_INSTALL_JAVA:-0}"
 DEFAULT_JAVA_VERSION="${DEFAULT_JAVA_VERSION:-21}"
 DEFAULT_INSTALL_MAVEN="${DEFAULT_INSTALL_MAVEN:-0}"
@@ -69,6 +68,12 @@ prompt_choice() {
     return
   fi
 
+  if command -v fzf >/dev/null 2>&1; then
+    answer=$(printf '%s\n' "${options[@]}" | fzf --height=~40% --prompt="${prompt}: " --header="Default: ${default_value} (ESC to use default)" --no-info --bind 'esc:abort' || echo "${default_value}")
+    printf '%s' "${answer}"
+    return
+  fi
+
   while true; do
     printf '%s [%s]: ' "${prompt}" "${default_value}" >&2
     IFS= read -r answer
@@ -80,6 +85,16 @@ prompt_choice() {
       fi
     done
   done
+}
+
+get_latest_opencode_version() {
+  local latest_version
+  latest_version=$(curl -fsSL https://api.github.com/repos/anomalyco/opencode/releases/latest | grep -o '"tag_name": *"[^"]*"' | sed 's/"tag_name": *"v\{0,1\}\(.*\)"/\1/')
+  if [[ -n "${latest_version}" ]]; then
+    printf '%s' "${latest_version}"
+  else
+    printf '%s' "1.2.27"
+  fi
 }
 
 normalize_csv_tokens() {
@@ -112,6 +127,21 @@ prompt_multi_choice() {
 
   if [[ "${INTERACTIVE}" != "1" || ! -t 0 ]]; then
     printf '%s' "$(normalize_csv_tokens "${default_value}")"
+    return
+  fi
+
+  if command -v fzf >/dev/null 2>&1; then
+    answer=$(printf '%s\n' "${options[@]}" | fzf --multi --height=~40% --prompt="${prompt}: " --header="Space to select, Enter to confirm, ESC for default (${default_value})" --no-info --bind 'esc:abort' | xargs || echo "${default_value}")
+    normalized_answer="$(normalize_csv_tokens "${answer}")"
+    if [[ -z "${normalized_answer}" || "${normalized_answer}" == "none" ]]; then
+      printf '%s' "none"
+      return
+    fi
+    if [[ "${normalized_answer}" == "all" ]]; then
+      printf '%s' "$(printf '%s\n' "${options[@]}" | grep -vx 'none' | grep -vx 'all' | xargs)"
+      return
+    fi
+    printf '%s' "${normalized_answer}"
     return
   fi
 
@@ -154,6 +184,7 @@ collect_defaults() {
   IMAGE_NAME="$(prompt_text "Docker image repository" "${IMAGE_NAME}")"
   INSTALL_PATH="$(prompt_text "Wrapper install path" "${INSTALL_PATH}")"
   DEFAULT_AUTH_MODE="$(prompt_choice "Default auth mode" "${DEFAULT_AUTH_MODE}" bedrock other)"
+  DEFAULT_OPENCODE_VERSION="${DEFAULT_OPENCODE_VERSION:-$(get_latest_opencode_version)}"
   DEFAULT_OPENCODE_VERSION="$(prompt_text "Default opencode version" "${DEFAULT_OPENCODE_VERSION}")"
   local default_extras="none"
   local default_mounts=""

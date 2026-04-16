@@ -70,6 +70,12 @@ prompt_choice() {
     return
   fi
 
+  if command -v fzf >/dev/null 2>&1; then
+    answer=$(printf '%s\n' "${options[@]}" | fzf --height=~40% --prompt="${prompt}: " --header="Default: ${default_value} (ESC to use default)" --no-info --bind 'esc:abort' || echo "${default_value}")
+    printf '%s' "${answer}"
+    return
+  fi
+
   while true; do
     printf '%s [%s]: ' "${prompt}" "${default_value}" >&2
     IFS= read -r answer
@@ -113,6 +119,21 @@ prompt_multi_choice() {
 
   if [[ "${INTERACTIVE}" != "1" || ! -t 0 ]]; then
     printf '%s' "$(normalize_csv_tokens "${default_value}")"
+    return
+  fi
+
+  if command -v fzf >/dev/null 2>&1; then
+    answer=$(printf '%s\n' "${options[@]}" | fzf --multi --height=~40% --prompt="${prompt}: " --header="Space to select, Enter to confirm, ESC for default (${default_value})" --no-info --bind 'esc:abort' | xargs || echo "${default_value}")
+    normalized_answer="$(normalize_csv_tokens "${answer}")"
+    if [[ -z "${normalized_answer}" || "${normalized_answer}" == "none" ]]; then
+      printf '%s' "none"
+      return
+    fi
+    if [[ "${normalized_answer}" == "all" ]]; then
+      printf '%s' "$(printf '%s\n' "${options[@]}" | grep -vx 'none' | grep -vx 'all' | xargs)"
+      return
+    fi
+    printf '%s' "${normalized_answer}"
     return
   fi
 
@@ -318,12 +339,16 @@ build_image_name() {
   fi
 
   claude_version="\$(sanitize_tag_value "\${claude_version}")"
-  printf '%s:%s\n' "\${image_repo}" "aws\${install_awscli}-node\${install_node}-n\${node_major}-java\${install_java}-j\${java_version}-maven\${install_maven}-gh\${install_gh}-claude\${install_claude}-c\${claude_version}"
+  local user_uid="\$(id -u)"
+  local user_gid="\$(id -g)"
+  printf '%s:%s\n' "\${image_repo}" "aws\${install_awscli}-node\${install_node}-n\${node_major}-java\${install_java}-j\${java_version}-maven\${install_maven}-gh\${install_gh}-claude\${install_claude}-c\${claude_version}-uid\${user_uid}-gid\${user_gid}"
 }
 
 ensure_image() {
   local image_name="\$1"
   local build_args=(
+    --build-arg "USER_UID=\$(id -u)"
+    --build-arg "USER_GID=\$(id -g)"
     --build-arg "INSTALL_AWSCLI=\${CLAUDE_DOCKER_INSTALL_AWSCLI:-\${DEFAULT_INSTALL_AWSCLI}}"
     --build-arg "INSTALL_NODE=\${CLAUDE_DOCKER_INSTALL_NODE:-\${DEFAULT_INSTALL_NODE}}"
     --build-arg "INSTALL_CLAUDE=\${CLAUDE_DOCKER_INSTALL_CLAUDE:-\${DEFAULT_INSTALL_CLAUDE}}"

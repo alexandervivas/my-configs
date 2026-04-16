@@ -48,6 +48,15 @@ prompt_agent() {
     exit 1
   fi
 
+  if command -v fzf >/dev/null 2>&1; then
+    answer=$(printf '%s\n' "claude" "opencode" | fzf --height=~40% --prompt="Select agent: " --header="Choose the agent to install" --no-info)
+    if [[ -n "${answer}" ]]; then
+      printf '%s\n' "${answer}"
+      return
+    fi
+    exit 1
+  fi
+
   while true; do
     printf 'Select agent [claude/opencode]: ' >&2
     IFS= read -r answer
