@@ -59,6 +59,16 @@ ARG TARGETARCH
 
 ENV PATH="/home/${USERNAME}/.local/bin:${PATH}"
 
+# Install gosu for dropping privileges
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends gosu; \
+    rm -rf /var/lib/apt/lists/*; \
+    gosu nobody true
+
+COPY opencode/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 RUN set -eux; \
     if [ "${INSTALL_OPENCODE}" = "1" ]; then \
       arch="${TARGETARCH:-$(dpkg --print-architecture)}"; \
@@ -79,6 +89,5 @@ RUN set -eux; \
     fi
 
 WORKDIR /workspace
-USER ${USERNAME}
 
-ENTRYPOINT ["opencode"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh", "opencode"]
