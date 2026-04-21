@@ -1,0 +1,24 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "openrouter": {
+      "options": {
+        "apiKey": "{env:OPENROUTER_API_KEY}"
+      },
+      "models": {
+        "anthropic/claude-3.5-haiku": {
+          "name": "Claude 3.5 Haiku (Tier 1)"
+        },
+        "openai/gpt-4.1-mini": {
+          "name": "GPT-4.1 Mini (Tier 1)"
+        },
+        "qwen/qwen3-coder": {
+          "name": "Qwen3 Coder (Tier 2)"
+        },
+        "anthropic/claude-3.7-sonnet": {
+          "name": "Claude 3.7 Sonnet (Tier 3)"
+        }
+      }
+    }
+  }
+}

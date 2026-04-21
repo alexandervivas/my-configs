@@ -1,0 +1,181 @@
+{
+  "startedAt": "2026-04-20T21:02:38.411Z",
+  "finishedAt": "2026-04-20T21:02:38.412Z",
+  "scenarios": {
+    "happyPath": {
+      "status": "completed",
+      "transitions": [
+        {
+          "from": "explore",
+          "to": "propose",
+          "automatic": true
+        },
+        {
+          "from": "propose",
+          "to": "apply",
+          "automatic": true
+        },
+        {
+          "from": "apply",
+          "to": "archive",
+          "automatic": true
+        }
+      ],
+      "routingEvents": [
+        {
+          "phase": "apply",
+          "taskId": "2.1",
+          "attempt": 1,
+          "selectedTier": "balanced",
+          "selectedModel": "openrouter/qwen/qwen3-coder",
+          "premiumDisabledByBudget": false
+        }
+      ],
+      "escalation": null
+    },
+    "retryRecovery": {
+      "status": "completed",
+      "transitions": [
+        {
+          "from": "explore",
+          "to": "propose",
+          "automatic": true
+        },
+        {
+          "from": "propose",
+          "to": "apply",
+          "automatic": true
+        },
+        {
+          "from": "apply",
+          "to": "archive",
+          "automatic": true
+        }
+      ],
+      "routingEvents": [
+        {
+          "phase": "apply",
+          "taskId": "2.2",
+          "attempt": 1,
+          "selectedTier": "balanced",
+          "selectedModel": "openrouter/qwen/qwen3-coder",
+          "premiumDisabledByBudget": false
+        },
+        {
+          "phase": "apply",
+          "taskId": "2.2",
+          "attempt": 2,
+          "selectedTier": "balanced",
+          "selectedModel": "openrouter/openai/gpt-4.1-mini",
+          "premiumDisabledByBudget": false
+        }
+      ],
+      "escalation": null
+    },
+    "blockedEscalation": {
+      "status": "escalated",
+      "transitions": [
+        {
+          "from": "explore",
+          "to": "propose",
+          "automatic": true
+        },
+        {
+          "from": "propose",
+          "to": "apply",
+          "automatic": true
+        }
+      ],
+      "routingEvents": [
+        {
+          "phase": "apply",
+          "taskId": "2.3",
+          "attempt": 1,
+          "selectedTier": "balanced",
+          "selectedModel": "openrouter/qwen/qwen3-coder",
+          "premiumDisabledByBudget": false
+        },
+        {
+          "phase": "apply",
+          "taskId": "2.3",
+          "attempt": 2,
+          "selectedTier": "balanced",
+          "selectedModel": "openrouter/openai/gpt-4.1-mini",
+          "premiumDisabledByBudget": false
+        },
+        {
+          "phase": "apply",
+          "taskId": "2.3",
+          "attempt": 3,
+          "selectedTier": "premium",
+          "selectedModel": "openrouter/anthropic/claude-3.7-sonnet",
+          "premiumDisabledByBudget": false
+        }
+      ],
+      "escalation": {
+        "reason": "retry_exhausted",
+        "phase": "apply",
+        "taskId": "2.3",
+        "attempts": 3,
+        "elapsedMinutes": 0,
+        "blockers": [
+          "Task did not converge within policy limits"
+        ],
+        "options": [
+          "Increase retry/time budget",
+          "Change model tier policy",
+          "Provide manual guidance"
+        ],
+        "recommendation": "Provide human guidance and resume automation.",
+        "decisionRequired": "Unblock task 2.3",
+        "createdAt": "2026-04-20T21:02:38.412Z"
+      }
+    },
+    "criticalEscalation": {
+      "status": "escalated",
+      "transitions": [
+        {
+          "from": "explore",
+          "to": "propose",
+          "automatic": true
+        },
+        {
+          "from": "propose",
+          "to": "apply",
+          "automatic": true
+        }
+      ],
+      "routingEvents": [],
+      "escalation": {
+        "reason": "critical_decision",
+        "phase": "apply",
+        "taskId": null,
+        "attempts": 0,
+        "elapsedMinutes": 0,
+        "blockers": [
+          "Critical decision category detected: security"
+        ],
+        "options": [
+          "Approve the decision and continue automation",
+          "Provide a safer alternative",
+          "Pause and redesign before continuing"
+        ],
+        "recommendation": "Request explicit human decision before proceeding.",
+        "decisionRequired": "Resolve security decision",
+        "createdAt": "2026-04-20T21:02:38.412Z"
+      }
+    },
+    "budgetFloor": {
+      "ok": true,
+      "selectedModel": "openrouter/qwen/qwen3-coder",
+      "selectedTier": "balanced",
+      "requestedTier": "premium",
+      "fallbackOrder": [
+        "premium",
+        "balanced",
+        "low"
+      ],
+      "premiumDisabledByBudget": true
+    }
+  }
+}
