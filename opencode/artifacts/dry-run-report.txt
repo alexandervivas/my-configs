@@ -1,0 +1,10 @@
+
+> opencode-agentic-openspec-workflow@0.1.0 dry-run
+> node scripts/dry-run.mjs
+
+Wrote dry-run report to artifacts/workflow-dry-run.json
+happyPath status: completed
+retryRecovery status: completed
+blockedEscalation status: escalated
+criticalEscalation status: escalated
+budgetFloor selectedTier: balanced

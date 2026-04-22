@@ -1,0 +1,23 @@
+
+> opencode-agentic-openspec-workflow@0.1.0 test
+> node --test
+
+✔ opencode.json declares required orchestrators and subagents (0.999667ms)
+✔ command mappings resolve to required orchestrators (0.114042ms)
+✔ markdown command frontmatter mirrors orchestrator bindings (1.296ms)
+✔ legacy command directory also includes orchestrator metadata (1.288375ms)
+✔ happy path transitions all phases automatically (0.446542ms)
+✔ retry path recovers before escalation (0.094042ms)
+✔ blocked task escalates after retry budget exhaustion (1.562958ms)
+✔ critical decision escalates immediately (0.074875ms)
+✔ budget floor disables premium tier for non-critical work (0.08175ms)
+✔ budget floor still allows premium for critical allowed categories (0.054459ms)
+✔ rejects non-allowlisted model request (0.04475ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 101.480125
